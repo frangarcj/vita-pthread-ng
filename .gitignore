@@ -1,0 +1,7 @@
+build*/
+third_party/
+history/
+*.tar
+*.tar.gz
+*_LOG.txt
+*_SUMMARY.txt
