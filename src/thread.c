@@ -12,22 +12,15 @@ struct handle_slot
 };
 static struct handle_slot g_handles[VP_HANDLE_SLOTS];
 static atomic_flag g_handle_guard = ATOMIC_FLAG_INIT;
-#if defined(VPTHREAD_HAL_VITA)
-/* See vp_hal_current_tcb_slot(): _Thread_local is not thread-local on the
- * Vita backend (emutls falls back to a shared slot without a gthread layer),
- * so the current TCB lives in the newlib per-thread pthread-data slot. */
-#define vp_current_get() ((vp_thread_t)vp_hal_current_tcb_get())
-#define vp_current_set(t) vp_hal_current_tcb_set(t)
-/* Force extraction of posix.o whenever vpthread is linked: it provides the
- * strong pthread_* definitions that activate libgcc's gthread layer, making
- * emutls (_Thread_local) genuinely per-thread for application code. */
-extern const char vp_posix_gthread_anchor;
-__attribute__((used)) static const void *const vp_gthread_anchor_ref =
-    &vp_posix_gthread_anchor;
-#else
 static _Thread_local vp_thread_t g_current;
 #define vp_current_get() (g_current)
 #define vp_current_set(t) ((void)(g_current = (t)))
+#if defined(VPTHREAD_HAL_VITA)
+/* Force extraction of posix.o whenever vpthread is linked: libstdc++ and
+ * libgcc bind their gthread layer to the strong pthread_* it defines. */
+extern const char vp_posix_gthread_anchor;
+__attribute__((used)) static const void *const vp_gthread_anchor_ref =
+    &vp_posix_gthread_anchor;
 #endif
 
 static void handle_lock(void)
