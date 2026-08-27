@@ -151,6 +151,9 @@ int vp_mutex_lock(vp_mutex_t *m)
     int pre = mutex_precheck(m, self, 0);
     if (pre >= 0)
         return pre;
+    /* Uncontended: nothing to block on, so nothing to stay cancellable for. */
+    if (!vp_hal_mutex_trylock(&m->os_mutex))
+        return mutex_after_acquire(m, self);
     for (;;)
     {
         vp_wait_enter(self, VP_WAIT_MUTEX, m);
