@@ -16,6 +16,18 @@ static _Thread_local vp_thread_t g_current;
 #define vp_current_get() (g_current)
 #define vp_current_set(t) ((void)(g_current = (t)))
 #if defined(VPTHREAD_HAL_VITA)
+/* g_current is only per-thread if the toolchain emits real TLS. A newlib that
+ * keeps its own reent there is the published evidence that it does; without
+ * it, emutls would give every thread the same g_current. */
+#include <reent.h>
+_Static_assert(
+#ifdef _REENT_THREAD_LOCAL
+    1,
+#else
+    0,
+#endif
+    "vpthread needs a native-TLS toolchain: build newlib with "
+    "--enable-newlib-reent-thread-local and gcc with --enable-tls");
 /* Force extraction of posix.o whenever vpthread is linked: libstdc++ and
  * libgcc bind their gthread layer to the strong pthread_* it defines. */
 extern const char vp_posix_gthread_anchor;
