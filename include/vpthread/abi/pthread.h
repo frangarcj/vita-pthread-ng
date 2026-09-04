@@ -112,14 +112,28 @@ extern "C"
 #define PTHREAD_BARRIER_SERIAL_THREAD (-1)
 #define PTHREAD_CANCELED ((void *)(intptr_t)-1)
 
+#if defined(VPTHREAD_HAL_VITA_SCELIBC)
+/* Addresses are constant expressions in C++ (constinit); int casts are not. */
+extern struct pthread_mutex_t_ __vp_mutex_normal_init, __vp_mutex_recursive_init, __vp_mutex_errorcheck_init;
+extern struct pthread_cond_t_ __vp_cond_init;
+extern struct pthread_rwlock_t_ __vp_rwlock_init;
+extern struct pthread_spinlock_t_ __vp_spinlock_init;
+#define PTHREAD_MUTEX_INITIALIZER (&__vp_mutex_normal_init)
+#define PTHREAD_RECURSIVE_MUTEX_INITIALIZER (&__vp_mutex_recursive_init)
+#define PTHREAD_ERRORCHECK_MUTEX_INITIALIZER (&__vp_mutex_errorcheck_init)
+#define PTHREAD_COND_INITIALIZER (&__vp_cond_init)
+#define PTHREAD_RWLOCK_INITIALIZER (&__vp_rwlock_init)
+#define PTHREAD_SPINLOCK_INITIALIZER (&__vp_spinlock_init)
+#else
 #define PTHREAD_MUTEX_INITIALIZER ((pthread_mutex_t)(intptr_t)-1)
 #define PTHREAD_RECURSIVE_MUTEX_INITIALIZER ((pthread_mutex_t)(intptr_t)-2)
 #define PTHREAD_ERRORCHECK_MUTEX_INITIALIZER ((pthread_mutex_t)(intptr_t)-3)
-#define PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP PTHREAD_RECURSIVE_MUTEX_INITIALIZER
-#define PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP PTHREAD_ERRORCHECK_MUTEX_INITIALIZER
 #define PTHREAD_COND_INITIALIZER ((pthread_cond_t)(intptr_t)-1)
 #define PTHREAD_RWLOCK_INITIALIZER ((pthread_rwlock_t)(intptr_t)-1)
 #define PTHREAD_SPINLOCK_INITIALIZER ((pthread_spinlock_t)(intptr_t)-1)
+#endif
+#define PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP PTHREAD_RECURSIVE_MUTEX_INITIALIZER
+#define PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP PTHREAD_ERRORCHECK_MUTEX_INITIALIZER
 #if defined(VPTHREAD_HAL_VITA_SCELIBC)
 #define PTHREAD_ONCE_INIT {0, 0}
 #else

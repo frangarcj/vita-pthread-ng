@@ -23,11 +23,23 @@ const char vp_posix_gthread_anchor = 0;
 extern int pthread_sigmask(int, const sigset_t *, sigset_t *);
 #endif
 
+#if defined(VPTHREAD_HAL_VITA_SCELIBC)
+#define VP_SENTINEL_ADDR(p, n) _Generic((p),                                \
+    pthread_mutex_t: (void *)((n) == 2 ? (void *)&__vp_mutex_recursive_init  \
+                              : (n) == 3 ? (void *)&__vp_mutex_errorcheck_init \
+                                         : (void *)&__vp_mutex_normal_init), \
+    pthread_cond_t: (void *)&__vp_cond_init,                                 \
+    pthread_rwlock_t: (void *)&__vp_rwlock_init,                            \
+    pthread_spinlock_t: (void *)&__vp_spinlock_init)
+#define PTR_SENTINEL(p, n) ((void *)(p) == VP_SENTINEL_ADDR(p, n))
+#define PTR_IS_OBJ(p) ((p) != NULL && !PTR_SENTINEL(p, 1) && !PTR_SENTINEL(p, 2) && !PTR_SENTINEL(p, 3))
+#else
 #define PTR_SENTINEL(p, n) ((intptr_t)(p) == -(n))
 /* A lazily-initialized slot holds NULL, a small negative sentinel, or a real
  * object pointer.  Never classify by pointer sign: on Vita the newlib heap
  * lives at 0x88000000+, so valid pointers are negative as intptr_t. */
 #define PTR_IS_OBJ(p) ((p) != NULL && (uintptr_t)(p) < (uintptr_t)-3)
+#endif
 
 struct pthread_attr_t_
 {
@@ -66,6 +78,22 @@ struct pthread_spinlock_t_
 {
     atomic_flag flag;
 };
+
+#if defined(VPTHREAD_HAL_VITA_SCELIBC)
+/* Sentinels compared by address only. */
+struct pthread_mutex_t_
+{
+    char unused;
+};
+struct pthread_rwlock_t_
+{
+    char unused;
+};
+struct pthread_mutex_t_ __vp_mutex_normal_init, __vp_mutex_recursive_init, __vp_mutex_errorcheck_init;
+struct pthread_cond_t_ __vp_cond_init;
+struct pthread_rwlock_t_ __vp_rwlock_init;
+struct pthread_spinlock_t_ __vp_spinlock_init;
+#endif
 
 static int valid_pshared(int v) { return v == PTHREAD_PROCESS_PRIVATE || v == PTHREAD_PROCESS_SHARED; }
 static int valid_mutex_type(int v) { return v == PTHREAD_MUTEX_NORMAL || v == PTHREAD_MUTEX_RECURSIVE || v == PTHREAD_MUTEX_ERRORCHECK; }
