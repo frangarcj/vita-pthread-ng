@@ -12,6 +12,11 @@ extern "C"
 #ifndef ATOMIC_VAR_INIT
 #define ATOMIC_VAR_INIT(value) (value)
 #endif
+#if defined(VPTHREAD_HAL_VITA_SCELIBC)
+/* SceLibc world: the opaque handle typedefs are fixed by vita-libc's
+ * bits/pthread_types.h, not redefined here. */
+#include <bits/pthread_types.h>
+#else
     /* VitaSDK-compatible public object model.  pthread_t is deliberately a
      * 32-bit generated handle; the synchronization objects remain opaque pointer
      * handles so the historical -1/-2/-3 static initializers keep their ABI. */
@@ -27,6 +32,7 @@ extern "C"
     typedef struct pthread_rwlock_t_ *pthread_rwlock_t;
     typedef struct pthread_rwlockattr_t_ *pthread_rwlockattr_t;
     typedef struct pthread_spinlock_t_ *pthread_spinlock_t;
+#endif
 
 /* glibc's signal/time headers normally pull in the host pthread ABI.  In the
  * Linux SCE simulator we intentionally provide Vita's ABI instead. */
@@ -54,6 +60,10 @@ extern "C"
 #define CLOCK_THREAD_CPUTIME_ID 3
 #endif
 
+#if !defined(VPTHREAD_HAL_VITA_SCELIBC)
+    /* SceLibc world: pthread_once_t already came from bits/pthread_types.h
+     * above (state + semaphore); pthread_once() below only ever touches
+     * state, so the shorter layout is enough. */
     struct pthread_once_t_
     {
         int state;
@@ -62,6 +72,7 @@ extern "C"
         int done;
     };
     typedef struct pthread_once_t_ pthread_once_t;
+#endif
 
 #define PTHREAD_SCOPE_PROCESS 0
 #define PTHREAD_SCOPE_SYSTEM 1
@@ -109,7 +120,11 @@ extern "C"
 #define PTHREAD_COND_INITIALIZER ((pthread_cond_t)(intptr_t)-1)
 #define PTHREAD_RWLOCK_INITIALIZER ((pthread_rwlock_t)(intptr_t)-1)
 #define PTHREAD_SPINLOCK_INITIALIZER ((pthread_spinlock_t)(intptr_t)-1)
+#if defined(VPTHREAD_HAL_VITA_SCELIBC)
+#define PTHREAD_ONCE_INIT {0, 0}
+#else
 #define PTHREAD_ONCE_INIT {0, 0, 0, 0}
+#endif
 
 #ifndef PTHREAD_STACK_MIN
 #define PTHREAD_STACK_MIN 16384u

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include "internal.h"
 
-#if defined(VPTHREAD_HAL_VITA)
+#if defined(VPTHREAD_HAL_VITA) || defined(VPTHREAD_HAL_VITA_SCELIBC)
 #define P(name) name
 /* Referenced from thread.c so that linking any part of vpthread extracts this
  * object.  libgcc's gthread layer (emutls behind _Thread_local, libstdc++
@@ -388,7 +388,9 @@ int P(pthread_once)(pthread_once_t *o, void (*init)(void))
                 vp_cleanup_pop_impl(&cleanup, 0);
                 free(rc);
                 __atomic_store_n(&o->state, 2, __ATOMIC_RELEASE);
+#if !defined(VPTHREAD_HAL_VITA_SCELIBC)
                 o->done = 1;
+#endif
                 return 0;
             }
         }
@@ -1024,7 +1026,7 @@ int P(pthread_sigmask)(int how, const sigset_t *set, sigset_t *old)
 {
 #if defined(VPTHREAD_HAL_SCE_SIM)
     return pthread_sigmask(how, set, old);
-#elif defined(VPTHREAD_HAL_VITA)
+#elif defined(VPTHREAD_HAL_VITA) || defined(VPTHREAD_HAL_VITA_SCELIBC)
     (void)how;
     (void)set;
     (void)old;
